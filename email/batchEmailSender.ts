@@ -1,7 +1,7 @@
-// this is the abstract class for the batch email sender
-// it has a send method that takes an array of emails and an html template
+import PostmarkBatchEmailSender from "./postmarkEmailSender";
+import SendgridBatchEmailSender from "./sendgridEmailSender";
 
-interface BatchEmailSender {
+export interface BatchEmailSender {
   send(
     emails: string[],
     blogName: string,
@@ -9,7 +9,7 @@ interface BatchEmailSender {
   ): { failureCount: number; failureEmails: string[] };
 }
 
-class BatchEmailSenderFactory {
+export default class BatchEmailSenderFactory {
   static createBatchEmailSender(provider: string): BatchEmailSender {
     switch (provider.toLowerCase()) {
       case "postmark":

@@ -1,3 +1,5 @@
+import { BatchEmailSender } from "./batchEmailSender";
+
 /**
  * The maximum number of emails that can be sent in a single batch.
  */
@@ -15,7 +17,7 @@ type BatchResponse = {
  * A class that implements the `BatchEmailSender` interface using the Postmark email service.
  * This class can be used to send batches of emails using the Postmark API.
  */
-class PostmarkBatchEmailSender implements BatchEmailSender {
+export default class PostmarkBatchEmailSender implements BatchEmailSender {
   // ...
   pmClient: any;
 

@@ -1,4 +1,6 @@
-class SendgridBatchEmailSender implements BatchEmailSender {
+import { BatchEmailSender } from "./batchEmailSender";
+
+export default class SendgridBatchEmailSender implements BatchEmailSender {
   constructor() {
     // import the sendgrid client
     // const sgMail = require("@sendgrid/mail");

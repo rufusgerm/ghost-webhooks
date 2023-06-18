@@ -1,5 +1,6 @@
 import express from 'express';
 import MysqlClientProvider from './mysql/mysqlClientProvider';
+import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSender';
 
 const app = express();
 let mysql: MysqlClientProvider;
