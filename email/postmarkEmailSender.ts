@@ -22,7 +22,7 @@ class PostmarkBatchEmailSender implements BatchEmailSender {
   constructor() {
     // import the postmark client
     let postmark = require("postmark");
-    const serverToken = process.env.POSTMARK_SERVER_TOKEN;
+    const serverToken = process.env.MAIL_SERVER_API_KEY;
     this.pmClient = new postmark.ServerClient(serverToken);
   }
 

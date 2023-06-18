@@ -11,7 +11,7 @@ interface BatchEmailSender {
 
 class BatchEmailSenderFactory {
   static createBatchEmailSender(provider: string): BatchEmailSender {
-    switch (provider) {
+    switch (provider.toLowerCase()) {
       case "postmark":
         return new PostmarkBatchEmailSender();
       case "sendgrid":
