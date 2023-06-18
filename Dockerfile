@@ -17,4 +17,4 @@ EXPOSE 3000
 RUN npm run build
 
 # Run the app
-CMD [ "node", "ghost_hooks.js" ]
+CMD [ "node", "dist/ghost_hooks.js" ]
