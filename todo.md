@@ -1,0 +1,12 @@
+- [x] Create docker file which can run a simple flask webhook endpoint
+- [x] Once running, ensure the webhook can be hit and prints the JSON object it receives
+- [x] Add the webhook image as a service to the Development Blog docker-compose.yml
+- [x] Ensure the webhook endpoint can be hit by the custom webhook integration in Ghost (I tested with "Create New Post")
+- [x] Capture the JSON object sent by Ghost to the endpoint in order to inform later impl steps of the webhook
+- [ ] Get Newsletters Firing
+    - The way this can be done is to input fake Mailgun credentials
+    - Now once you go to publish a post, it will give you the option to "email and publish" it
+    - Now the post record in the db table has a newsletter_id associated with it
+    - Grab this from the db via the post_id from the json sent by the webhook
+    - Pull relational data that you want from the database with webhook (specifically the emails of members)
+    - Send a batch email to your members

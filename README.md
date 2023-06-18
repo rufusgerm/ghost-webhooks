@@ -1,0 +1,2 @@
+- The way this can be done is to input fake Mailgun credentials
+- Now once you go to publish a post, it will give you the option to "email and publish" it
