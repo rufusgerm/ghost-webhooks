@@ -1,8 +1,10 @@
 import express from 'express';
+import bodyParser from 'body-parser';
 import MysqlClientProvider from './mysql/mysqlClientProvider';
 import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSender';
 
 const app = express();
+app.use(bodyParser.json());
 
 async function setup() { 
   let mysql: MysqlClientProvider;
@@ -15,17 +17,17 @@ async function setup() {
     await mysql.createConnection();
     batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender("postmark");
     // batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
+    console.log("Configuration successful. Starting webhooks server...");
     isServerConfigValid = true;
   } catch (error) {
     console.error(`Error during configuration of webhooks server: ${error}`);
   }
   
   if (isServerConfigValid) {
-    console.log("Configuration successful. Starting webhooks server...");
     app.post('/hooks', (req, res) => {
       console.log(`request received: ${req}`)
       // get the body of the request and parse it as JSON
-      const postData = JSON.parse(req.body);
+      const postData = req.body;
       console.log(`postData: ${postData}`);
       // get the post id from the object
       const postId = postData.current.id;
@@ -37,11 +39,11 @@ async function setup() {
       const newsletterName = mysql.getNewsletterNameByPostId(postId);
       console.log(`newsletterNameResults: ${newsletterName}`);
     
-      const { failureCount, failureEmails } = batchEmailSender
-        .send(emails, newsletterName, 'New Post!');
+      // const { failureCount, failureEmails } = batchEmailSender
+      //   .send(emails, newsletterName, 'New Post!');
     
-      console.log(`${failureCount} emails failed to send`);
-      console.log(`Failed emails list: ${failureEmails}`);
+      // console.log(`${failureCount} emails failed to send`);
+      // console.log(`Failed emails list: ${failureEmails}`);
   
       res.status(200).send('OK');
     });
