@@ -26,20 +26,25 @@ async function setup() {
   
   if (isServerConfigValid) {
     console.log("Configuration successful. Starting webhooks server...");
-    app.post('/hooks', (req, res) => {
+    app.post('/hooks', async (req, res) => {
       // get the body of the request and parse it as JSON
       const postData = req.body;
       console.log(`postData: ${JSON.stringify(postData)}`);
       // get the post id from the object
       const postId = postData["post"]["current"]["id"];
       console.log(`postId: ${postId}`);
+      try { 
+        const emails = await mysql.getEmailsByPostId(postId);
+        console.log(`emailResults: ${emails}`);
+  
+        const newsletterName = await mysql.getNewsletterNameByPostId(postId);
+        console.log(`newsletterNameResults: ${newsletterName}`);
+      
+      } catch (error) {
+        console.error(`Error retrieving emails for post ID ${postId}: ${error}`);
+        throw error;
+      }
       // query the database for member emails with said newsletter id
-      const emails = mysql.getEmailsByPostId(postId);
-      console.log(`emailResults: ${emails}`);
-
-      const newsletterName = mysql.getNewsletterNameByPostId(postId);
-      console.log(`newsletterNameResults: ${newsletterName}`);
-    
       // const { failureCount, failureEmails } = batchEmailSender
       //   .send(emails, newsletterName, 'New Post!');
     
