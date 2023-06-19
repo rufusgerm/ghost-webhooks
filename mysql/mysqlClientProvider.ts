@@ -17,17 +17,16 @@ const NEWSLETTER_QUERY = `SELECT name,
     LIMIT 1`;
 
 const MAX_CXN_RETRIES = 6;
+let CONNECTION_ATTEMPTS = 1;
 
 export default class MysqlClientProvider {
   client: mysql.Connection;
   constructor() {
     // create mysql client with a host that references the docker service and
     // gets the user, password, and db name from the env
-    this.client = this.createConnection();
   }
 
-  private createConnection(): mysql.Connection {
-    let connectionAttempts = 1;
+  public async createConnection(): Promise<mysql.Connection> {
 
     console.log(`MySql Connection String is: ${process.env.DATABASE_CONTAINER_NAME} ${process.env.MYSQL_USER} ${process.env.MYSQL_PASSWORD} ${process.env.MYSQL_DATABASE}`)
 
@@ -40,16 +39,16 @@ export default class MysqlClientProvider {
     
     connection.connect((error) => {
       if (error) {
-        if (connectionAttempts > MAX_CXN_RETRIES) throw new Error("MySql connection failure: Max connection retries exceeded")
-        console.error(`Error connecting to MySQL (attempt #${connectionAttempts}): ${error}`);
-        setTimeout(() => {
+        if (CONNECTION_ATTEMPTS > MAX_CXN_RETRIES) throw new Error("MySql connection failure: Max connection retries exceeded")
+        console.error(`Error connecting to MySQL (attempt #${CONNECTION_ATTEMPTS}): ${error}`);
+        setTimeout(async () => {
           console.log("Retrying MySQL connection...");
-          connectionAttempts++;
-          this.client = this.createConnection();
-        }, this.getRetryDelay(connectionAttempts));
+          CONNECTION_ATTEMPTS++;
+          this.client = await this.createConnection();
+        }, this.getRetryDelay(CONNECTION_ATTEMPTS));
       } else {
         console.log("Connected to MySQL");
-        connectionAttempts = 1;
+        CONNECTION_ATTEMPTS = 1;
       }
     });
 

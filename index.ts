@@ -8,7 +8,9 @@ let isServerConfigValid = false;
 let batchEmailSender: BatchEmailSender;
 
 try {
+  // need to await this so that the server doesn't start before the connection is established
   mysql = new MysqlClientProvider();
+  await mysql.createConnection();
   batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender("postmark");
   // batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
   isServerConfigValid = true;
