@@ -20,10 +20,11 @@ const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
 
 export default class MysqlClientProvider {
-  client: mysql.Connection | null = null;
+  client: mysql.Connection | null;
   constructor() {
     // create mysql client with a host that references the docker service and
     // gets the user, password, and db name from the env
+    this.client = null;
   }
 
   public async createConnection(): Promise<mysql.Connection> {
@@ -31,7 +32,7 @@ export default class MysqlClientProvider {
     console.log(`MySql Connection String is: ${process.env.DATABASE_CONTAINER_NAME} ${process.env.MYSQL_USER} ${process.env.MYSQL_PASSWORD} ${process.env.MYSQL_DATABASE}`)
 
     const connection = mysql.createConnection({
-      host: process.env.DATABASE_CONTAINER_NAME,
+      host: "db",
       user: process.env.MYSQL_USER,
       password: process.env.MYSQL_PASSWORD,
       database: process.env.MYSQL_DATABASE,
@@ -75,6 +76,9 @@ export default class MysqlClientProvider {
    */
   getEmailsByPostId(postId: string): string[] {
     let emails: string[] = [];
+    if (!this.client) {
+      throw new Error("MySQL client not initialized");
+    }
     this.client.query(EMAILS_QUERY, [postId], (error, results) => {
       if (error) {
         throw error;
@@ -92,6 +96,9 @@ export default class MysqlClientProvider {
    */
   getNewsletterNameByPostId(postId: string): string {
     let name: string = "";
+    if (!this.client) {
+      throw new Error("MySQL client not initialized");
+    }
     this.client.query(NEWSLETTER_QUERY, [postId], (error, results) => {
       if (error) {
         throw error;
