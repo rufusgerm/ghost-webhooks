@@ -25,12 +25,11 @@ async function setup() {
   
   if (isServerConfigValid) {
     app.post('/hooks', (req, res) => {
-      console.log(`request received: ${req}`)
       // get the body of the request and parse it as JSON
       const postData = req.body;
-      console.log(`postData: ${postData}`);
+      console.log(`postData: ${JSON.stringify(postData)}`);
       // get the post id from the object
-      const postId = postData.current.id;
+      const postId = postData["post"]["current"]["id"];
       console.log(`postId: ${postId}`);
       // query the database for member emails with said newsletter id
       const emails = mysql.getEmailsByPostId(postId);
