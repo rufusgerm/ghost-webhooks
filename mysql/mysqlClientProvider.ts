@@ -20,7 +20,7 @@ const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
 
 export default class MysqlClientProvider {
-  client: mysql.Connection;
+  client: mysql.Connection | null = null;
   constructor() {
     // create mysql client with a host that references the docker service and
     // gets the user, password, and db name from the env
