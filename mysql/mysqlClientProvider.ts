@@ -1,4 +1,4 @@
-import mysql2, { RowDataPacket } from "mysql2";
+import mysql2, { FieldPacket, RowDataPacket } from "mysql2";
 
 const EMAILS_QUERY = `SELECT email, FROM members JOIN members_newsletters ON members.id = members_newsletters.member_id JOIN newsletters JOIN posts ON posts.newsletter_id = members_newsletters.newsletter_id WHERE posts.id = ?`;
 const NEWSLETTER_QUERY = `SELECT name FROM newsletters JOIN posts ON posts.newsletter_id = newsletters.id WHERE posts.id = ? LIMIT 1`;
@@ -7,12 +7,7 @@ const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
 
 export default class MysqlClientProvider {
-  client: mysql2.Connection | null;
-  constructor() {
-    // create mysql client with a host that references the docker service and
-    // gets the user, password, and db name from the env
-    this.client = null;
-  }
+  constructor() {}
 
   public async createConnection(): Promise<mysql2.Connection> {
 
@@ -32,7 +27,7 @@ export default class MysqlClientProvider {
         setTimeout(async () => {
           console.log("Retrying MySQL connection...");
           CONNECTION_ATTEMPTS++;
-          this.client = await this.createConnection();
+          await this.createConnection();
         }, this.getRetryDelay(CONNECTION_ATTEMPTS));
       } else {
         console.log("Connected to MySQL");
@@ -61,15 +56,25 @@ export default class MysqlClientProvider {
    * @param postId The ID of the post to retrieve emails for.
    * @returns An array of emails associated with the specified post ID.
    */
-  getEmailsByPostId(postId: string) {
-    let emails: string[] = [];
-    if (!this.client) {
-      throw new Error("MySQL client not initialized");
+  async getEmailsByPostId(postId: string): Promise<string[]> {
+    try {
+      let emails: string[] = [];
+      const connection = await this.createConnection();
+  
+      const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(EMAILS_QUERY, [postId]);
+      console.log(`rows: ${rows}`);
+  
+      rows.forEach((row) => {
+        emails.push(row.email);
+      });
+  
+      connection.end()
+      return emails;
+    } catch (error) {
+      console.error(`Error retrieving emails for post ID ${postId}: ${error}`);
+      throw error;
     }
-    this.client.execute<RowDataPacket[]>(EMAILS_QUERY, [postId], (err, results, fields) => {
-      emails = results.map((row) => row.email);
-    });
-    return emails;
+
   }
 
   /**
@@ -77,14 +82,18 @@ export default class MysqlClientProvider {
    * @param postId The ID of the post to retrieve the newsletter name for.
    * @returns The name of the newsletter associated with the specified post ID.
    */
-  getNewsletterNameByPostId(postId: string): string {
-    let name: string = "";
-    if (!this.client) {
-      throw new Error("MySQL client not initialized");
+  async getNewsletterNameByPostId(postId: string): Promise<string> {
+    try { 
+      let name: string = "";
+      const connection = await this.createConnection();
+  
+      const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId]);
+      console.log(`rows: ${rows}`);
+      name = rows[0].name;
+      return name;
+    } catch (error) {
+      console.error(`Error retrieving newsletter name for post ID ${postId}: ${error}`);
+      throw error;
     }
-    this.client.execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId], (err, results, fields) => {
-      name = results[0].name;
-    });
-    return name;
   }
 }

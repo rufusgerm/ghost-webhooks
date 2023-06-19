@@ -6,24 +6,26 @@ import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSen
 const app = express();
 app.use(bodyParser.json());
 
-async function setup() { 
-  let mysql: MysqlClientProvider;
+async function setup() {
   let isServerConfigValid = false;
   let batchEmailSender: BatchEmailSender;
+  let mysql = new MysqlClientProvider();
 
   try {
     // need to await this so that the server doesn't start before the connection is established
-    mysql = new MysqlClientProvider();
-    await mysql.createConnection();
+    let connection = await mysql.createConnection();
+    if (connection) {
+      isServerConfigValid = true;
+      connection.end();
+    }
     batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender("postmark");
     // batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
-    console.log("Configuration successful. Starting webhooks server...");
-    isServerConfigValid = true;
   } catch (error) {
     console.error(`Error during configuration of webhooks server: ${error}`);
   }
   
   if (isServerConfigValid) {
+    console.log("Configuration successful. Starting webhooks server...");
     app.post('/hooks', (req, res) => {
       // get the body of the request and parse it as JSON
       const postData = req.body;
@@ -48,7 +50,7 @@ async function setup() {
     });
   
   
-    app.listen(3000, () => console.log('Ghost Webhooks Server Started Successfully'));
+    app.listen(3000, () => console.log('Ghost Webhooks Server Started Successfully. Now listening on port 3000...'));
   } else {
     console.error(
       "Ghost Webhooks Server Failed to Start. Please see previous logs for more information.");
