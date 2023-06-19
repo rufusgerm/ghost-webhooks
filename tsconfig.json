@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
     /* Language and Environment */
-    "target": "es2017",             
+    "target": "es2016",
 
     /* Modules */
-    "module": "es2022",       
-    "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */
+    "module": "commonjs",
+    "moduleResolution": "Node",
+    "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */,
     // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
-    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
 
     /* Type Checking */
-    "strict": true,    
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "strict": true,
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */
   }
 }

@@ -31,17 +31,17 @@ async function setup() {
       const postId = postData.current.id;
       console.log(`postId: ${postId}`);
       // query the database for member emails with said newsletter id
-      const emailResults = mysql.getEmailsByPostId(postId);
-      console.log(`emailResults: ${emailResults}`);
+      const emails = mysql.getEmailsByPostId(postId);
+      console.log(`emailResults: ${emails}`);
 
-      const newsletterNameResults = mysql.getNewsletterNameByPostId(postId);
-      console.log(`newsletterNameResults: ${newsletterNameResults}`);
+      const newsletterName = mysql.getNewsletterNameByPostId(postId);
+      console.log(`newsletterNameResults: ${newsletterName}`);
     
-      // const { failureCount, failureEmails } = batchEmailSender
-      //   .send(emails, newsletterName, 'New Post!');
+      const { failureCount, failureEmails } = batchEmailSender
+        .send(emails, newsletterName, 'New Post!');
     
-      // console.log(`${failureCount} emails failed to send`);
-      // console.log(`Failed emails list: ${failureEmails}`);
+      console.log(`${failureCount} emails failed to send`);
+      console.log(`Failed emails list: ${failureEmails}`);
   
       res.status(200).send('OK');
     });

@@ -1,19 +1,7 @@
-import mysql2 from "mysql2";
-const EMAILS_QUERY = `SELECT email,  
-    FROM members
-    JOIN members_newsletters
-    ON members.id = members_newsletters.member_id
-    JOIN newsletters
-    JOIN posts
-    ON posts.newsletter_id = members_newsletters.newsletter_id
-    WHERE posts.id = ?`;
+import mysql2, { RowDataPacket } from "mysql2";
 
-const NEWSLETTER_QUERY = `SELECT name,
-    FROM newsletters
-    JOIN posts
-    ON posts.newsletter_id = newsletters.id
-    WHERE posts.id = ?
-    LIMIT 1`;
+const EMAILS_QUERY = `SELECT email, FROM members JOIN members_newsletters ON members.id = members_newsletters.member_id JOIN newsletters JOIN posts ON posts.newsletter_id = members_newsletters.newsletter_id WHERE posts.id = ?`;
+const NEWSLETTER_QUERY = `SELECT name FROM newsletters JOIN posts ON posts.newsletter_id = newsletters.id WHERE posts.id = ? LIMIT 1`;
 
 const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
@@ -74,12 +62,14 @@ export default class MysqlClientProvider {
    * @returns An array of emails associated with the specified post ID.
    */
   getEmailsByPostId(postId: string) {
+    let emails: string[] = [];
     if (!this.client) {
       throw new Error("MySQL client not initialized");
     }
-    this.client.query(EMAILS_QUERY, [postId], (error, results) => {
-      return results;
+    this.client.execute<RowDataPacket[]>(EMAILS_QUERY, [postId], (err, results, fields) => {
+      emails = results.map((row) => row.email);
     });
+    return emails;
   }
 
   /**
@@ -87,12 +77,14 @@ export default class MysqlClientProvider {
    * @param postId The ID of the post to retrieve the newsletter name for.
    * @returns The name of the newsletter associated with the specified post ID.
    */
-  getNewsletterNameByPostId(postId: string) {
+  getNewsletterNameByPostId(postId: string): string {
+    let name: string = "";
     if (!this.client) {
       throw new Error("MySQL client not initialized");
     }
-    this.client.query(NEWSLETTER_QUERY, [postId], (error, results) => {
-      return results;
+    this.client.execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId], (err, results, fields) => {
+      name = results[0].name;
     });
+    return name;
   }
 }
