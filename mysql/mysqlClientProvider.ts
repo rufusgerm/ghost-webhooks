@@ -1,5 +1,4 @@
-import mysql from 'mysql';
-
+import mysql2 from "mysql2";
 const EMAILS_QUERY = `SELECT email,  
     FROM members
     JOIN members_newsletters
@@ -20,18 +19,18 @@ const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
 
 export default class MysqlClientProvider {
-  client: mysql.Connection | null;
+  client: mysql2.Connection | null;
   constructor() {
     // create mysql client with a host that references the docker service and
     // gets the user, password, and db name from the env
     this.client = null;
   }
 
-  public async createConnection(): Promise<mysql.Connection> {
+  public async createConnection(): Promise<mysql2.Connection> {
 
     console.log(`MySql Connection String is: ${process.env.DATABASE_CONTAINER_NAME} ${process.env.MYSQL_USER} ${process.env.MYSQL_PASSWORD} ${process.env.MYSQL_DATABASE}`)
 
-    const connection = mysql.createConnection({
+    const connection = mysql2.createConnection({
       host: "db",
       user: process.env.MYSQL_USER,
       password: process.env.MYSQL_PASSWORD,
@@ -74,19 +73,13 @@ export default class MysqlClientProvider {
    * @param postId The ID of the post to retrieve emails for.
    * @returns An array of emails associated with the specified post ID.
    */
-  getEmailsByPostId(postId: string): string[] {
-    let emails: string[] = [];
+  getEmailsByPostId(postId: string) {
     if (!this.client) {
       throw new Error("MySQL client not initialized");
     }
     this.client.query(EMAILS_QUERY, [postId], (error, results) => {
-      if (error) {
-        throw error;
-      } else {
-        emails = results.map((result: { email: any }) => result.email);
-      }
+      return results;
     });
-    return emails;
   }
 
   /**
@@ -94,19 +87,12 @@ export default class MysqlClientProvider {
    * @param postId The ID of the post to retrieve the newsletter name for.
    * @returns The name of the newsletter associated with the specified post ID.
    */
-  getNewsletterNameByPostId(postId: string): string {
-    let name: string = "";
+  getNewsletterNameByPostId(postId: string) {
     if (!this.client) {
       throw new Error("MySQL client not initialized");
     }
     this.client.query(NEWSLETTER_QUERY, [postId], (error, results) => {
-      if (error) {
-        throw error;
-      } else {
-        name = results[0].name;
-      }
+      return results;
     });
-
-    return name;
   }
 }
