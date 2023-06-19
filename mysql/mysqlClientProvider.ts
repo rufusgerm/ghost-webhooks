@@ -29,6 +29,8 @@ export default class MysqlClientProvider {
   private createConnection(): mysql.Connection {
     let connectionAttempts = 1;
 
+    console.log(`MySql Connection String is: ${process.env.DATABASE_CONTAINER_NAME} ${process.env.MYSQL_USER} ${process.env.MYSQL_PASSWORD} ${process.env.MYSQL_DATABASE}`)
+
     const connection = mysql.createConnection({
       host: process.env.DATABASE_CONTAINER_NAME,
       user: process.env.MYSQL_USER,
@@ -44,9 +46,10 @@ export default class MysqlClientProvider {
           console.log("Retrying MySQL connection...");
           connectionAttempts++;
           this.client = this.createConnection();
-        }, this.getRetryDelay());
+        }, this.getRetryDelay(connectionAttempts));
       } else {
         console.log("Connected to MySQL");
+        connectionAttempts = 1;
       }
     });
 
@@ -58,14 +61,11 @@ export default class MysqlClientProvider {
    * The delay increases exponentially with each retry, up to a maximum of 60 seconds.
    * @returns The delay (in milliseconds) to wait before retrying a failed MySQL connection.
    */
-  private getRetryDelay(): number {
+  private getRetryDelay(attempts: number): number {
     const minDelayMillis = 1_000;
     const maxDelayMillis = 60_000;
-    const expBackoffFactor = 2;
-    const delay = Math.min(
-      maxDelayMillis,
-      minDelayMillis * Math.pow(expBackoffFactor, MAX_CXN_RETRIES)
-    );
+    const delay = maxDelayMillis < minDelayMillis * 2 ** attempts ? maxDelayMillis : minDelayMillis * 2 ** attempts;
+    console.log(`Delaying MySQL connection retry for ${delay}ms`);
     return delay;
   }
 

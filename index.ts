@@ -17,7 +17,9 @@ try {
 }
 
 if (isServerConfigValid) {
+  console.log("Configuration successful. Starting webhooks server...");
   app.post('/hooks', (req, res) => {
+    console.log(`request received: ${req}`)
     // get the body of the request and parse it as JSON
     const postData = JSON.parse(req.body);
     console.log(`postData: ${postData}`);
