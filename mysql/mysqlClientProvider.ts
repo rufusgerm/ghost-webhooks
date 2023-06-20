@@ -1,4 +1,4 @@
-import mysql2, { FieldPacket, RowDataPacket } from "mysql2";
+import mysql2, { FieldPacket, RowDataPacket } from "mysql2/promise";
 
 const EMAILS_QUERY = `SELECT email FROM members JOIN members_newsletters ON members.id = members_newsletters.member_id JOIN posts ON posts.newsletter_id = members_newsletters.newsletter_id WHERE posts.id = ?`;
 const NEWSLETTER_QUERY = `SELECT name FROM newsletters JOIN posts ON posts.newsletter_id = newsletters.id WHERE posts.id = ? LIMIT 1`;
@@ -16,33 +16,31 @@ export default class MysqlClientProvider {
    * @throws An error if the maximum number of connection retries is exceeded.
    */
   public async attemptToConnectMySql(): Promise<boolean> {
-    let isConnectionSuccessful = false;
-    const connection = this.getConnection();
-    
-    connection.connect((error) => {
-      if (error) {
-        if (CONNECTION_ATTEMPTS > MAX_CXN_RETRIES) throw new Error("MySql connection failure: Max connection retries exceeded")
-        console.error(`Error connecting to MySQL (attempt ${CONNECTION_ATTEMPTS} / ${MAX_CXN_RETRIES}): ${error}`);
-        setTimeout(async () => {
-          CONNECTION_ATTEMPTS++;
-          await this.attemptToConnectMySql();
-        }, this.getRetryDelay(CONNECTION_ATTEMPTS));
-      } else {
+    while (CONNECTION_ATTEMPTS <= MAX_CXN_RETRIES) {
+      try {
+        const connection = await this.getConnection();
         console.log("Connected to MySQL");
-        isConnectionSuccessful = true;
-        CONNECTION_ATTEMPTS = 1;
+        return true;
+      } catch (error) {
+        console.error(
+          `Error connecting to MySQL (attempt ${CONNECTION_ATTEMPTS} / ${MAX_CXN_RETRIES}): ${error}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, this.getRetryDelay(CONNECTION_ATTEMPTS)));
+        CONNECTION_ATTEMPTS++;
       }
-    });
+    }
 
-    return isConnectionSuccessful;
+    throw new Error(
+      "Failed to connect to the database after multiple attempts."
+    );
   }
 
   /**
    * Creates a new MySQL connection using the provided credentials.
    * @returns A MySQL connection object.
    */
-  getConnection(): mysql2.Connection {
-    return mysql2.createConnection({
+  async getConnection(): Promise<mysql2.Connection> {
+    return await mysql2.createConnection({
       host: "db",
       user: process.env.MYSQL_USER,
       password: process.env.MYSQL_PASSWORD,
@@ -73,9 +71,9 @@ export default class MysqlClientProvider {
   async getEmailsByPostId(postId: string): Promise<string[]> {
     try {
       let emails: string[] = [];
-      const connection = this.getConnection();
+      const connection = await this.getConnection();
   
-      const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(EMAILS_QUERY, [postId]);
+      const [rows, fields] = await connection.execute<RowDataPacket[]>(EMAILS_QUERY, [postId]);
   
       rows.forEach((row) => {
         emails.push(row.email);
@@ -99,9 +97,9 @@ export default class MysqlClientProvider {
   async getNewsletterNameByPostId(postId: string): Promise<string> {
     try { 
       let name: string = "";
-      const connection = this.getConnection();
+      const connection = await this.getConnection();
   
-      const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId]);
+      const [rows, fields] = await connection.execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId]);
       name = rows[0].name;
 
       return name;

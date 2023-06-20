@@ -16,8 +16,8 @@ async function setup() {
   let mysql = new MysqlClientProvider();
 
   try {
-    let isConnectionSuccessful = await mysql.attemptToConnectMySql();
-    if (!isConnectionSuccessful) {
+    
+    if (!await mysql.attemptToConnectMySql()) {
       isServerConfigValid = false;
     }
     if (!process.env.EMAIL_PROVIDER) {
