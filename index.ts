@@ -6,20 +6,25 @@ import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSen
 const app = express();
 app.use(bodyParser.json());
 
+/**
+ * Sets up the Ghost Webhooks server by configuring the MySQL client provider and the BatchEmailSender.
+ * If the server configuration is valid, it starts the server and listens on port 3000.
+ */
 async function setup() {
-  let isServerConfigValid = false;
+  let isServerConfigValid = true;
   let batchEmailSender: BatchEmailSender;
   let mysql = new MysqlClientProvider();
 
   try {
-    // need to await this so that the server doesn't start before the connection is established
-    let connection = await mysql.createConnection();
-    if (connection) {
-      isServerConfigValid = true;
-      connection.end();
+    let isConnectionSuccessful = await mysql.attemptToConnectMySql();
+    if (!isConnectionSuccessful) {
+      isServerConfigValid = false;
     }
-    batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender("postmark");
-    // batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
+    if (!process.env.EMAIL_PROVIDER) {
+      isServerConfigValid = false;
+      throw new Error("EMAIL_PROVIDER environment variable not set");
+    }
+    batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
   } catch (error) {
     console.error(`Error during configuration of webhooks server: ${error}`);
   }
@@ -29,29 +34,29 @@ async function setup() {
     app.post('/hooks', async (req, res) => {
       // get the body of the request and parse it as JSON
       const postData = req.body;
-      console.log(`postData: ${JSON.stringify(postData)}`);
       // get the post id from the object
       const postId = postData["post"]["current"]["id"];
-      console.log(`postId: ${postId}`);
       try { 
         const emails = await mysql.getEmailsByPostId(postId);
-        console.log(`emailResults: ${emails}`);
   
         const newsletterName = await mysql.getNewsletterNameByPostId(postId);
-        console.log(`newsletterNameResults: ${newsletterName}`);
       
         const { failureCount, failureEmails } = batchEmailSender
           .send(emails, newsletterName, 'New Post!');
       
-        console.log(`${failureCount} emails failed to send out of ${emails.length} total`);
-        console.log(`Failed emails list: ${failureEmails}`);
+        if (failureCount > 0) {
+          console.error(
+            `${failureCount} emails failed to send out of ${emails.length} total`
+          );
+          console.error(`Failed emails list: ${failureEmails}`);
+        } else {
+          console.log(`All ${emails.length} newsletter emails sent successfully`);
+        }
+        
       } catch (error) {
         console.error(`Error retrieving emails for post ID ${postId}: ${error}`);
         throw error;
       }
-      // query the database for member emails with said newsletter id
-  
-      res.status(200).send('OK');
     });
   
   

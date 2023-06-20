@@ -9,39 +9,52 @@ let CONNECTION_ATTEMPTS = 1;
 export default class MysqlClientProvider {
   constructor() {}
 
-  public async createConnection(): Promise<mysql2.Connection> {
+  /**
+   * Attempts to connect to the MySQL database using the provided credentials.
+   * If the connection fails, it will retry up to MAX_CXN_RETRIES times with an exponential backoff.
+   * @returns A Promise that resolves to a boolean indicating whether the connection was successful.
+   * @throws An error if the maximum number of connection retries is exceeded.
+   */
+  public async attemptToConnectMySql(): Promise<boolean> {
+    let isConnectionSuccessful = false;
+    const connection = this.getConnection();
+    
+    connection.connect((error) => {
+      if (error) {
+        if (CONNECTION_ATTEMPTS > MAX_CXN_RETRIES) throw new Error("MySql connection failure: Max connection retries exceeded")
+        console.error(`Error connecting to MySQL (attempt ${CONNECTION_ATTEMPTS} / ${MAX_CXN_RETRIES}): ${error}`);
+        setTimeout(async () => {
+          CONNECTION_ATTEMPTS++;
+          await this.attemptToConnectMySql();
+        }, this.getRetryDelay(CONNECTION_ATTEMPTS));
+      } else {
+        console.log("Connected to MySQL");
+        isConnectionSuccessful = true;
+        CONNECTION_ATTEMPTS = 1;
+      }
+    });
 
-    console.log(`MySql Connection String is: ${process.env.DATABASE_CONTAINER_NAME} ${process.env.MYSQL_USER} ${process.env.MYSQL_PASSWORD} ${process.env.MYSQL_DATABASE}`)
+    return isConnectionSuccessful;
+  }
 
-    const connection = mysql2.createConnection({
+  /**
+   * Creates a new MySQL connection using the provided credentials.
+   * @returns A MySQL connection object.
+   */
+  getConnection(): mysql2.Connection {
+    return mysql2.createConnection({
       host: "db",
       user: process.env.MYSQL_USER,
       password: process.env.MYSQL_PASSWORD,
       database: process.env.MYSQL_DATABASE,
     });
-    
-    connection.connect((error) => {
-      if (error) {
-        if (CONNECTION_ATTEMPTS > MAX_CXN_RETRIES) throw new Error("MySql connection failure: Max connection retries exceeded")
-        console.error(`Error connecting to MySQL (attempt #${CONNECTION_ATTEMPTS}): ${error}`);
-        setTimeout(async () => {
-          console.log("Retrying MySQL connection...");
-          CONNECTION_ATTEMPTS++;
-          await this.createConnection();
-        }, this.getRetryDelay(CONNECTION_ATTEMPTS));
-      } else {
-        console.log("Connected to MySQL");
-        CONNECTION_ATTEMPTS = 1;
-      }
-    });
-
-    return connection;
   }
 
+  
   /**
-   * Calculates the delay (in milliseconds) to wait before retrying a failed MySQL connection.
-   * The delay increases exponentially with each retry, up to a maximum of 60 seconds.
-   * @returns The delay (in milliseconds) to wait before retrying a failed MySQL connection.
+   * Calculates the delay time for retrying a failed MySQL connection attempt.
+   * @param attempts The number of connection attempts made so far.
+   * @returns The delay time in milliseconds.
    */
   private getRetryDelay(attempts: number): number {
     const minDelayMillis = 1_000;
@@ -52,17 +65,17 @@ export default class MysqlClientProvider {
   }
 
   /**
-   * Retrieves an array of emails associated with a post ID.
-   * @param postId The ID of the post to retrieve emails for.
-   * @returns An array of emails associated with the specified post ID.
-   */
+    * Retrieves the emails associated with a post ID.
+    * @param postId The ID of the post to retrieve the emails for.
+    * @returns An array of emails associated with the specified post ID.
+    * @throws An error if there was an issue retrieving the emails.
+    */
   async getEmailsByPostId(postId: string): Promise<string[]> {
     try {
       let emails: string[] = [];
-      const connection = await this.createConnection();
+      const connection = this.getConnection();
   
       const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(EMAILS_QUERY, [postId]);
-      console.log(`rows: ${rows}`);
   
       rows.forEach((row) => {
         emails.push(row.email);
@@ -81,15 +94,16 @@ export default class MysqlClientProvider {
    * Retrieves the name of the newsletter associated with a post ID.
    * @param postId The ID of the post to retrieve the newsletter name for.
    * @returns The name of the newsletter associated with the specified post ID.
+   * @throws An error if there was an issue retrieving the newsletter name.
    */
   async getNewsletterNameByPostId(postId: string): Promise<string> {
     try { 
       let name: string = "";
-      const connection = await this.createConnection();
+      const connection = this.getConnection();
   
       const [rows, fields] = await connection.promise().execute<RowDataPacket[]>(NEWSLETTER_QUERY, [postId]);
-      console.log(`rows: ${rows}`);
       name = rows[0].name;
+
       return name;
     } catch (error) {
       console.error(`Error retrieving newsletter name for post ID ${postId}: ${error}`);

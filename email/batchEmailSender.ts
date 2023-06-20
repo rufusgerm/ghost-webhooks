@@ -10,6 +10,12 @@ export interface BatchEmailSender {
 }
 
 export default class BatchEmailSenderFactory {
+  /**
+   * Creates a new instance of `BatchEmailSender` based on the specified email provider.
+   * @param {string} provider - The email provider to use. Valid values are "postmark" and "sendgrid".
+   * @returns {BatchEmailSender} A new instance of `BatchEmailSender` for the specified email provider.
+   * @throws {Error} If the specified email provider is invalid.
+   */
   static createBatchEmailSender(provider: string): BatchEmailSender {
     switch (provider.toLowerCase()) {
       case "postmark":
