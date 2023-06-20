@@ -49,8 +49,6 @@ async function setup() {
             `${failureCount} emails failed to send out of ${emails.length} total`
           );
           console.error(`Failed emails list: ${failureEmails}`);
-        } else {
-          console.log(`All ${emails.length} newsletter emails sent successfully`);
         }
         
       } catch (error) {
