@@ -11,22 +11,21 @@ app.use(bodyParser.json());
  * If the server configuration is valid, it starts the server and listens on port 3000.
  */
 async function setup() {
-  let isServerConfigValid = true;
+  let isServerConfigValid = false;
   let batchEmailSender: BatchEmailSender;
   let mysql = new MysqlClientProvider();
 
   try {
-    
-    if (!await mysql.attemptToConnectMySql()) {
-      isServerConfigValid = false;
+    if (await mysql.attemptToConnectMySql()) {
+      isServerConfigValid = true;
     }
     if (!process.env.EMAIL_PROVIDER) {
-      isServerConfigValid = false;
       throw new Error("EMAIL_PROVIDER environment variable not set");
     }
     batchEmailSender = BatchEmailSenderFactory.createBatchEmailSender(process.env.EMAIL_PROVIDER);
   } catch (error) {
     console.error(`Error during configuration of webhooks server: ${error}`);
+    isServerConfigValid = false;
   }
   
   if (isServerConfigValid) {
@@ -56,7 +55,6 @@ async function setup() {
         throw error;
       }
     });
-  
   
     app.listen(3000, () => console.log('Ghost Webhooks Server Started Successfully. Now listening on port 3000...'));
   } else {

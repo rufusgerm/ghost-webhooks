@@ -1,4 +1,5 @@
 import { BatchEmailSender } from "./batchEmailSender";
+import postmark from "postmark";
 
 /**
  * The maximum number of emails that can be sent in a single batch.
@@ -21,11 +22,11 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
   // ...
   pmClient: any;
 
-  constructor() {
+  constructor(apiKey: string) {
     // import the postmark client
-    let postmark = require("postmark");
-    const serverToken = process.env.MAIL_SERVER_API_KEY;
-    this.pmClient = new postmark.ServerClient(serverToken);
+      this.pmClient = new postmark.ServerClient(
+        apiKey
+      );
   }
 
   /**

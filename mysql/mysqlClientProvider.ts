@@ -18,7 +18,7 @@ export default class MysqlClientProvider {
   public async attemptToConnectMySql(): Promise<boolean> {
     while (CONNECTION_ATTEMPTS <= MAX_CXN_RETRIES) {
       try {
-        const connection = await this.getConnection();
+        await this.getConnection();
         console.log("Connected to MySQL");
         return true;
       } catch (error) {

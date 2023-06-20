@@ -17,11 +17,13 @@ export default class BatchEmailSenderFactory {
    * @throws {Error} If the specified email provider is invalid.
    */
   static createBatchEmailSender(provider: string): BatchEmailSender {
+    if (!process.env.MAIL_SERVER_API_KEY) throw new Error("MAIL_SERVER_API_KEY is not defined");
+    
     switch (provider.toLowerCase()) {
       case "postmark":
-        return new PostmarkBatchEmailSender();
+        return new PostmarkBatchEmailSender(process.env.MAIL_SERVER_API_KEY);
       case "sendgrid":
-        return new SendgridBatchEmailSender();
+        return new SendgridBatchEmailSender(process.env.MAIL_SERVER_API_KEY);
       default:
         throw new Error(`Invalid email provider: ${provider}`);
     }
