@@ -51,6 +51,8 @@ async function setup() {
     isServerConfigValid = false;
   }
   
+  // Ghost will retry sending the webhook multiple times if it doesn't receive 
+  // a status code of any kind, so we need to make sure we don't send duplicate emails.
   if (isServerConfigValid) {
     console.log("Configuration successful. Starting webhooks server...");
     app.post('/hooks', async (req, res) => {
@@ -79,13 +81,14 @@ async function setup() {
           console.error(
             `${failureEmails.length} emails failed to send out of ${usersToEmail.length} total`
           );
-          console.error(`Failed emails list: ${failureEmails}`);
+          throw new Error(`Failed emails list: ${failureEmails}`);
         }
-        
+        res.sendStatus(200);
       } catch (error) {
         console.error(`Error retrieving emails for post ID ${postId}: ${error}`);
-        throw error;
+        res.sendStatus(500);
       }
+      return;
     });
   
     app.listen(3000, () => console.log('Ghost Webhooks Server Started Successfully. Now listening on port 3000...'));
