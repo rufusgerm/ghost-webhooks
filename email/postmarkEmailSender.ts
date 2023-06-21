@@ -1,5 +1,4 @@
 import { BatchEmailSender } from "./batchEmailSender";
-import postmark from "postmark";
 import { UserData } from "../mysql/mysqlClientProvider";
 import { NewsletterData } from "..";
 
@@ -36,6 +35,7 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
 
   constructor(apiKey: string) {
     // import the postmark client
+      let postmark = require("postmark");
       this.pmClient = new postmark.ServerClient(
         apiKey
       );
