@@ -1,10 +1,15 @@
 import mysql2, { FieldPacket, RowDataPacket } from "mysql2/promise";
 
-const EMAILS_QUERY = `SELECT email FROM members JOIN members_newsletters ON members.id = members_newsletters.member_id JOIN posts ON posts.newsletter_id = members_newsletters.newsletter_id WHERE posts.id = ?`;
+const EMAILS_QUERY = `SELECT m.email as email, m.name as name FROM members as m JOIN members_newsletters ON members.id = members_newsletters.member_id JOIN posts as p ON posts.newsletter_id = members_newsletters.newsletter_id WHERE posts.id = ?`;
 const NEWSLETTER_QUERY = `SELECT name FROM newsletters JOIN posts ON posts.newsletter_id = newsletters.id WHERE posts.id = ? LIMIT 1`;
 
 const MAX_CXN_RETRIES = 6;
 let CONNECTION_ATTEMPTS = 1;
+
+export interface UserData { 
+  email: string;
+  name: string;
+}
 
 export default class MysqlClientProvider {
   constructor() {}
@@ -68,19 +73,22 @@ export default class MysqlClientProvider {
     * @returns An array of emails associated with the specified post ID.
     * @throws An error if there was an issue retrieving the emails.
     */
-  async getEmailsByPostId(postId: string): Promise<string[]> {
+  async getEmailsByPostId(postId: string): Promise<UserData[]> {
     try {
-      let emails: string[] = [];
+      let users: UserData[] = [];
       const connection = await this.getConnection();
   
       const [rows, fields] = await connection.execute<RowDataPacket[]>(EMAILS_QUERY, [postId]);
   
       rows.forEach((row) => {
-        emails.push(row.email);
+        users.push({
+          email: row.email,
+          name: row.name,
+        });
       });
   
       connection.end()
-      return emails;
+      return users;
     } catch (error) {
       console.error(`Error retrieving emails for post ID ${postId}: ${error}`);
       throw error;

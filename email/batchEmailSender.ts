@@ -1,12 +1,13 @@
+import { NewsletterData } from "..";
+import { UserData } from "../mysql/mysqlClientProvider";
 import PostmarkBatchEmailSender from "./postmarkEmailSender";
 import SendgridBatchEmailSender from "./sendgridEmailSender";
 
 export interface BatchEmailSender {
   send(
-    emails: string[],
-    blogName: string,
-    template: string
-  ): { failureCount: number; failureEmails: string[] };
+    userData: UserData[],
+    newsletterData: NewsletterData
+  ): string[];
 }
 
 export default class BatchEmailSenderFactory {

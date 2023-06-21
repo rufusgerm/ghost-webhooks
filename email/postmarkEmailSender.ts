@@ -1,5 +1,7 @@
 import { BatchEmailSender } from "./batchEmailSender";
 import postmark from "postmark";
+import { UserData } from "../mysql/mysqlClientProvider";
+import { NewsletterData } from "..";
 
 /**
  * The maximum number of emails that can be sent in a single batch.
@@ -13,6 +15,16 @@ type BatchResponse = {
   SubmittedAt: string,
   To: string
 }
+
+// THIS WILL NEED TO BE CHANGED TO MATCH YOUR OWN POSTMARK TEMPLATE
+type PostmarkTemplateModel = {
+	authorName: string,
+	newsletterName: string,
+	authorImage: string,
+	username: string,
+	postUrl: string
+}
+
 
 /**
  * A class that implements the `BatchEmailSender` interface using the Postmark email service.
@@ -30,30 +42,39 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
   }
 
   /**
-   * Sends a batch of emails to the recipients using the Postmark email service.
-   * @param emails An array of email addresses to send the emails to.
-   * @param blogName The name of the blog that the email is being sent from.
-   * @param template The HTML template to use for the email body.
-   * @returns An object containing the number of emails that failed to send and an array of the email addresses that failed.
+   * Sends a batch of emails to the specified users using the provided newsletter data.
+   * Returns an array of email addresses that failed to send.
+   * @param userData An array of user data objects containing the email addresses and names of the recipients.
+   * @param newsletter An object containing the data for the newsletter being sent.
+   * @returns An array of email addresses that failed to send.
    */
   send(
-    emails: string[],
-    blogName: string,
-    template: string
-  ): { failureCount: number; failureEmails: string[] } {
-    const batches = Math.ceil(emails.length / BATCH_SIZE);
-    let failureCount = 0;
-    let failureEmails: string[] = [];
-
+    userData: UserData[],
+    newsletter: NewsletterData
+  ): string[] {
+    let failedEmails: string[] = [];
+    const emailFrom = process.env.MAIL_FROM;
+    const templateId = process.env.MAIL_TEMPLATE_ID;
+    const postUrl = process.env.POST_URL + '/' + newsletter.postSlug;
+    
+    const batches = Math.ceil(userData.length / BATCH_SIZE);
+    
     for (let i = 0; i < batches; i++) {
-      const batch = emails.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-
-      const emailBatch = batch.map((email) => {
+      const batch = userData.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+      const emailBatch = batch.map((user) => {
+        const model: PostmarkTemplateModel = {
+            username: user.name,
+            newsletterName: newsletter.name,
+            authorName: newsletter.author.name,
+            authorImage: newsletter.author.image,
+            postUrl: postUrl,
+        }
+        
         return {
-          From: `${process.env.MAIL_FROM}`,
-          To: email,
-          Subject: `${blogName} Added a New Post!`,
-          HtmlBody: template,
+          From: emailFrom,
+          To: user.email,
+          TemplateId: templateId,
+          TemplateModel: model
         };
       });
 
@@ -62,13 +83,12 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
         .then((response: BatchResponse[]) => {
           response.forEach((result: BatchResponse) => {
             if (result.Message !== "OK" || result.ErrorCode !== 0) {
-              failureCount++;
-              failureEmails.push(result.To);
+              failedEmails.push(result.To);
             }
           });
         });
     }
 
-    return { failureCount, failureEmails };
+    return failedEmails;
   }
 }

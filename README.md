@@ -35,6 +35,7 @@ Sending your posts out via email when you publish them is not an option unless y
 The following environment variables are required regardless of which installation method you choose:
   - __EMAIL_PROVIDER__: The email provider to use. Currently supported providers are postmark and sendgrid.
   - __MAIL_SERVER_API_KEY__: The API key for the email provider.
+  - __MAIL_TEMPLATE_ID__: The ID of the email template from whichever 3rd party provider to use for the emails.
   - __DATABASE_CONTAINER_NAME__: The name of the MySQL database container.
   - __MYSQL_USER__: The username for the MySQL database.
   - __MYSQL_PASSWORD__: The password for the MySQL database.

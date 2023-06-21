@@ -1,10 +1,33 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import MysqlClientProvider from './mysql/mysqlClientProvider';
+import MysqlClientProvider, { UserData } from './mysql/mysqlClientProvider';
 import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSender';
 
 const app = express();
 app.use(bodyParser.json());
+
+interface PostData {
+  post: {
+    current: {
+      id: string;
+      slug: string;
+      primary_author: {
+        name: string;
+        profile_image: string;
+        url: string;
+      };
+    };
+  };
+}
+
+export interface NewsletterData {
+  name: string,
+  author: {
+    name: string,
+    image: string,
+  },
+  postSlug: string,
+}
 
 /**
  * Sets up the Ghost Webhooks server by configuring the MySQL client provider and the BatchEmailSender.
@@ -32,20 +55,29 @@ async function setup() {
     console.log("Configuration successful. Starting webhooks server...");
     app.post('/hooks', async (req, res) => {
       // get the body of the request and parse it as JSON
-      const postData = req.body;
+      const postData: PostData = req.body;
       // get the post id from the object
-      const postId = postData["post"]["current"]["id"];
+      const postId = postData.post.current.id;
       try { 
-        const emails = await mysql.getEmailsByPostId(postId);
+        const usersToEmail: UserData[] = await mysql.getEmailsByPostId(postId);
   
         const newsletterName = await mysql.getNewsletterNameByPostId(postId);
+
+        let newsletterData = {
+          name: newsletterName,
+          author: {
+            name: postData.post.current.primary_author.name,
+            image: postData.post.current.primary_author.profile_image,
+          },
+          postSlug: postData.post.current.slug
+        }
       
-        const { failureCount, failureEmails } = batchEmailSender
-          .send(emails, newsletterName, 'New Post!');
+        const failureEmails = batchEmailSender
+          .send(usersToEmail, newsletterData);
       
-        if (failureCount > 0) {
+        if (failureEmails.length > 0) {
           console.error(
-            `${failureCount} emails failed to send out of ${emails.length} total`
+            `${failureEmails.length} emails failed to send out of ${usersToEmail.length} total`
           );
           console.error(`Failed emails list: ${failureEmails}`);
         }
