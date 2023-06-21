@@ -79,7 +79,7 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
       });
 
       this.pmClient
-        .sendEmailBatch(emailBatch)
+        .sendEmailBatchWithTemplates(emailBatch)
         .then((response: BatchResponse[]) => {
           response.forEach((result: BatchResponse) => {
             if (result.Message !== "OK" || result.ErrorCode !== 0) {
