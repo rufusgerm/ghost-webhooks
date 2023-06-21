@@ -55,7 +55,7 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
     let failedEmails: string[] = [];
     const emailFrom = process.env.MAIL_FROM;
     const templateId = process.env.MAIL_TEMPLATE_ID;
-    const postUrl = process.env.POST_URL + '/' + newsletter.postSlug;
+    const postUrl = process.env.url + '/' + newsletter.postSlug;
     
     const batches = Math.ceil(userData.length / BATCH_SIZE);
     
@@ -74,7 +74,7 @@ export default class PostmarkBatchEmailSender implements BatchEmailSender {
           From: emailFrom,
           To: user.email,
           TemplateId: templateId,
-          TemplateModel: model
+          TemplateModel: model,
         };
       });
 
