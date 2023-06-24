@@ -1,10 +1,11 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import MysqlClientProvider, { UserData } from './mysql/mysqlClientProvider';
 import BatchEmailSenderFactory, { BatchEmailSender } from './email/batchEmailSender';
 
 const app = express();
-app.use(bodyParser.json());
+// Manually set the req limit here to avoid "Error: request entity too large" (https://stackoverflow.com/a/19965089)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb" }));
 
 interface PostData {
   post: {
